@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Create a `.env` file in the project root directory with the following content:
+1. Modify the `.env` file in the project root directory with the following content:
 ```
 INPUT_FOLDER=/path/to/input/folder
 OUTPUT_FOLDER=/path/to/output/folder
