@@ -12,7 +12,7 @@ Any2PDF Converter is a powerful Python tool that simplifies the process of conve
 
 ## Requirements
 
-- Python 3.5+
+- Python 3.5+ (Tested on Python 3.8 only)
 - Aspose.Slides
 - Aspose.Words
 - img2pdf
