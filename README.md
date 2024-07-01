@@ -23,7 +23,7 @@ Any2PDF Converter is a powerful Python tool that simplifies the process of conve
 
 1. Clone this repository:
 ```
-git clone https://github.com/yourusername/any2pdf-converter.git
+git clone https://github.com/ARISTheGod/any2pdf-converter.git
 ```
 
 2. Navigate to the project directory:
