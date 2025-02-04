@@ -4,3 +4,4 @@ aspose-words==24.7.0
 img2pdf==0.5.1
 Pillow==10.4.0
 PyPDF2==3.0.1
+fpdf2==2.8.2
