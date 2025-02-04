@@ -11,13 +11,13 @@ import aspose.slides as slides
 import aspose.words as words
 import img2pdf
 from dotenv import load_dotenv
+from fpdf import FPDF  # New import for converting text files
 
 # Load environment variables
 load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 
 def log_execution_time(func):
     @wraps(func)
@@ -29,7 +29,6 @@ def log_execution_time(func):
         return result
 
     return wrapper
-
 
 class FileConverter:
     def __init__(self, input_folder: str, output_folder: str):
@@ -64,19 +63,36 @@ class FileConverter:
         return output_file
 
     @log_execution_time
+    def convert_text_to_pdf(self, input_file: Path) -> Path:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        # Read file content and add to PDF
+        with open(input_file, "r", encoding="utf-8") as file:
+            for line in file:
+                pdf.multi_cell(0, 10, txt=line)
+        output_file = self.temp_folder / f"{input_file.stem}.pdf"
+        pdf.output(str(output_file))
+        logging.info(f"Converted {input_file} to PDF")
+        return output_file
+
+    @log_execution_time
     def process_files(self) -> List[Path]:
         pdf_files = []
         for file in self.input_folder.iterdir():
             if file.is_file():
                 try:
-                    if file.suffix.lower() in ('.ppt', '.pptx'):
+                    ext = file.suffix.lower()
+                    if ext in ('.ppt', '.pptx'):
                         pdf_files.append(self.convert_ppt_to_pdf(file))
-                    elif file.suffix.lower() in ('.doc', '.docx'):
+                    elif ext in ('.doc', '.docx'):
                         pdf_files.append(self.convert_doc_to_pdf(file))
-                    elif file.suffix.lower() in ('.png', '.jpg', '.jpeg'):
+                    elif ext in ('.png', '.jpg', '.jpeg'):
                         pdf_files.append(self.convert_image_to_pdf(file))
-                    elif file.suffix.lower() == '.pdf':
+                    elif ext == '.pdf':
                         pdf_files.append(file)
+                    elif ext in ('.py', '.md'):
+                        pdf_files.append(self.convert_text_to_pdf(file))
                     else:
                         logging.warning(f"Unsupported file type: {file}")
                 except Exception as e:
@@ -100,7 +116,6 @@ class FileConverter:
         self.temp_folder.rmdir()
         logging.info("Temporary files cleaned up")
 
-
 def main() -> None:
     input_folder = os.getenv('INPUT_FOLDER')
     output_folder = os.getenv('OUTPUT_FOLDER')
@@ -114,7 +129,6 @@ def main() -> None:
     merged_file = converter.merge_pdfs(pdf_files)
     converter.cleanup()
     logging.info(f"All files merged into {merged_file}")
-
 
 if __name__ == "__main__":
     main()
