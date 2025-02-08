@@ -17,7 +17,8 @@ from fpdf.enums import XPos, YPos  # Enums for new cell parameters
 load_dotenv()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def log_execution_time(func):
@@ -34,13 +35,12 @@ def log_execution_time(func):
 # Custom subclass so that every added page automatically draws the code box
 class CodePDF(FPDF):
     def header(self):
-        # For pages after the first, automatically draw the code box from top margin.
-        # (On the first page we add a header manually before drawing the box.)
+        # On pages after the first, draw a light gray box.
         if self.page_no() > 1:
             x0 = 10
             y0 = 10
             box_width = self.w - 20
-            box_height = self.h - 20  # leave a 10-unit bottom margin
+            box_height = self.h - 20  # leaving a 10-unit bottom margin
             self.set_fill_color(240, 240, 240)
             self.rect(x0, y0, box_width, box_height, 'FD')
             self.set_xy(x0 + 2, y0 + 2)
@@ -80,14 +80,17 @@ class FileConverter:
 
     @log_execution_time
     def convert_text_to_pdf(self, input_file: Path) -> Path:
-        # Use our custom CodePDF class so that header() is called on every new page.
+        # Use the custom CodePDF class.
         pdf = CodePDF()
         pdf.add_page()
+        # Use the built-in Courier font.
         pdf.set_font("Courier", size=10)
-        # Write the file path header on the first page.
+        
+        # Write the file path header.
         pdf.cell(0, 10, text=f"File path: {input_file}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         pdf.ln(4)
-        # Draw the code box for the first page manually below the header:
+        
+        # Draw the code box below the header.
         current_y = pdf.get_y()
         x0 = 10
         box_width = pdf.w - 20
@@ -95,16 +98,24 @@ class FileConverter:
         pdf.set_fill_color(240, 240, 240)
         pdf.rect(x0, current_y, box_width, box_height, 'FD')
         pdf.set_xy(x0 + 2, current_y + 2)
-
+        
         box_width_inner = box_width - 4
-
+        
+        # Read the text file line by line and replace unsupported characters.
         with open(input_file, "r", encoding="utf-8") as file:
             for line in file:
-                # Check if the current y-position nears the bottom (i.e. if there's not enough space to print a new line)
+                # Replace em dash and curly quotes with ASCII equivalents.
+                line = (line.replace("—", "--")
+                            .replace("“", '"')
+                            .replace("”", '"')
+                            .replace("‘", "'")
+                            .replace("’", "'"))
+                # If near the bottom of the page, add a new page.
                 if pdf.get_y() > pdf.h - 15:
-                    pdf.add_page()  # on new page, header() gets called automatically
+                    pdf.add_page()
+                    pdf.set_font("Courier", size=10)
                 pdf.multi_cell(box_width_inner, 5, text=line)
-
+        
         output_file = self.temp_folder / f"{input_file.stem}.pdf"
         pdf.output(str(output_file))
         logging.info(f"Converted {input_file} to PDF")
@@ -113,7 +124,8 @@ class FileConverter:
     @log_execution_time
     def process_files(self) -> List[Path]:
         pdf_files = []
-        for file in self.input_folder.iterdir():
+        # Recursively process all files in the input folder.
+        for file in sorted(self.input_folder.rglob('*')):
             if file.is_file():
                 try:
                     ext = file.suffix.lower()
